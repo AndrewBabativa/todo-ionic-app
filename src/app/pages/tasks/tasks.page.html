@@ -1,0 +1,149 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>📝 Mis Tareas</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="clearCompleted()" fill="clear" color="light">
+        <ion-icon name="checkmark-done" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+
+  <!-- Buscador — controlado por feature flag -->
+  <ion-toolbar *ngIf="flagService.isEnabled('enableSearch')">
+    <ion-searchbar
+      placeholder="Buscar tareas..."
+      (ionInput)="onSearch($event)"
+      debounce="300">
+    </ion-searchbar>
+  </ion-toolbar>
+
+  <!-- Filtro por estado -->
+  <ion-toolbar>
+    <ion-segment value="all" (ionChange)="onSegmentChange($event)">
+      <ion-segment-button value="all">
+        <ion-label>Todas ({{ taskService.totalTasks() }})</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="pending">
+        <ion-label>Pendientes ({{ taskService.pendingTasks() }})</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="completed">
+        <ion-label>Completadas ({{ taskService.completedTasks() }})</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+  <!-- Filtro por categorías -->
+  <div class="category-filter">
+    <ion-chip
+      *ngFor="let cat of categoryService.categories()"
+      [style.--background]="selectedCategoryFilter === cat.id ? cat.color : ''"
+      [style.--color]="selectedCategoryFilter === cat.id ? 'white' : ''"
+      (click)="onCategoryFilter(cat.id)">
+      <ion-icon [name]="cat.icon"></ion-icon>
+      <ion-label>{{ cat.name }}</ion-label>
+    </ion-chip>
+  </div>
+
+  <!-- Lista de tareas -->
+  <div class="tasks-container">
+    @for (task of taskService.filteredTasks(); track task.id) {
+      <app-task-card
+        [task]="task"
+        [category]="getCategoryForTask(task)"
+        [showPriority]="flagService.isEnabled('showPriority')"
+        [showDescription]="flagService.isEnabled('showDescription')"
+        (onToggle)="toggleComplete($event)"
+        (onDelete)="deleteTask($event)"
+        (onEdit)="openEditModal($event)">
+      </app-task-card>
+    } @empty {
+      <app-empty-state
+      
+        icon="list-outline"
+        title="No hay tareas aquí"
+        subtitle="Toca el botón + para agregar una tarea">
+      </app-empty-state>
+    }
+  </div>
+
+  <!-- FAB para agregar -->
+  <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+    <ion-fab-button (click)="openAddModal()" color="primary">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>
+
+<!-- Modal para agregar/editar tarea -->
+<ion-modal [isOpen]="isModalOpen()" (didDismiss)="closeModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>{{ isEditing() ? 'Editar Tarea' : 'Nueva Tarea' }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeModal()">
+            <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-content class="ion-padding">
+      <ion-list>
+
+        <ion-item>
+          <ion-input
+            label="Título *"
+            labelPlacement="floating"
+            placeholder="¿Qué necesitas hacer?"
+            [(ngModel)]="taskTitle"
+            maxlength="100">
+          </ion-input>
+        </ion-item>
+
+        <ion-item *ngIf="flagService.isEnabled('showDescription')">
+          <ion-textarea
+            label="Descripción"
+            labelPlacement="floating"
+            placeholder="Detalles adicionales..."
+            [(ngModel)]="taskDescription"
+            rows="3">
+          </ion-textarea>
+        </ion-item>
+
+        <ion-item>
+          <ion-select
+            label="Categoría"
+            labelPlacement="floating"
+            [(ngModel)]="taskCategoryId">
+            <ion-select-option
+              *ngFor="let cat of categoryService.categories()"
+              [value]="cat.id">
+              {{ cat.name }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <ion-item *ngIf="flagService.isEnabled('showPriority')">
+          <ion-select
+            label="Prioridad"
+            labelPlacement="floating"
+            [(ngModel)]="taskPriority">
+            <ion-select-option value="low">🟢 Baja</ion-select-option>
+            <ion-select-option value="medium">🟡 Media</ion-select-option>
+            <ion-select-option value="high">🔴 Alta</ion-select-option>
+          </ion-select>
+        </ion-item>
+
+      </ion-list>
+
+      <ion-button expand="block" (click)="saveTask()" class="ion-margin-top">
+        <ion-icon name="save-outline" slot="start"></ion-icon>
+        {{ isEditing() ? 'Actualizar' : 'Guardar Tarea' }}
+      </ion-button>
+    </ion-content>
+  </ng-template>
+</ion-modal>

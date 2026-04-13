@@ -1,0 +1,77 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>🏷️ Categorías</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-list *ngIf="categoryService.categories().length > 0; else emptyState">
+    <ion-item *ngFor="let cat of categoryService.categories()">
+      <ion-icon [name]="cat.icon" [style.color]="cat.color" slot="start"></ion-icon>
+      <ion-label>
+        <h2>{{ cat.name }}</h2>
+      </ion-label>
+      <ion-button fill="clear" slot="end" (click)="openEditModal(cat)">
+        <ion-icon name="create-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+      <ion-button fill="clear" slot="end" color="danger" (click)="deleteCategory(cat.id)">
+        <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-item>
+  </ion-list>
+
+  <ng-template #emptyState>
+    <app-empty-state
+      icon="folder-outline"
+      title="Sin categorías"
+      subtitle="Crea tu primera categoría">
+    </app-empty-state>
+  </ng-template>
+
+  <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+    <ion-fab-button (click)="openAddModal()">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>
+
+<ion-modal [isOpen]="isModalOpen()" (didDismiss)="closeModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>{{ isEditing() ? 'Editar' : 'Nueva' }} Categoría</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeModal()">
+            <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+
+      <ion-item>
+        <ion-input label="Nombre *" labelPlacement="floating"
+          placeholder="Nombre de la categoría"
+          [(ngModel)]="catName">
+        </ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-select label="Color" labelPlacement="floating" [(ngModel)]="catColor">
+          <ion-select-option *ngFor="let c of colors" [value]="c">{{ c }}</ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <ion-item>
+        <ion-select label="Ícono" labelPlacement="floating" [(ngModel)]="catIcon">
+          <ion-select-option *ngFor="let i of icons" [value]="i">{{ i }}</ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <ion-button expand="block" (click)="saveCategory()" class="ion-margin-top">
+        <ion-icon name="save-outline" slot="start"></ion-icon>
+        {{ isEditing() ? 'Actualizar' : 'Guardar' }}
+      </ion-button>
+    </ion-content>
+  </ng-template>
+</ion-modal>
