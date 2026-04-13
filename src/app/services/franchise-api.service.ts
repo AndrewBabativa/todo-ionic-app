@@ -1,8 +1,7 @@
-// src/app/services/franchise-api.service.ts — archivo nuevo
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -39,11 +38,10 @@ export interface TopProductApi {
 @Injectable({ providedIn: 'root' })
 export class FranchiseApiService {
 
+  // inject() en lugar de constructor — evita la dependencia circular
+  private http = inject(HttpClient);
   private readonly baseUrl = 'http://localhost:8080/api/v1';
 
-  constructor(private http: HttpClient) {}
-
-  // ── Franquicias ──────────────────────────────────────
   getAllFranchises(): Observable<FranchiseApi[]> {
     return this.http.get<FranchiseApi[]>(`${this.baseUrl}/franchises`)
       .pipe(catchError(this.handleError));
@@ -55,17 +53,15 @@ export class FranchiseApiService {
     ).pipe(catchError(this.handleError));
   }
 
-  // ── Top productos ─────────────────────────────────────
   getTopProducts(franchiseId: string): Observable<ApiResponse<TopProductApi[]>> {
     return this.http.get<ApiResponse<TopProductApi[]>>(
       `${this.baseUrl}/franchises/${franchiseId}/top-products`
     ).pipe(catchError(this.handleError));
   }
 
-  // ── Manejo de errores ─────────────────────────────────
   private handleError(error: HttpErrorResponse): Observable<never> {
     let message = 'Error desconocido';
-    if (error.status === 0) message = 'No se puede conectar al servidor';
+    if (error.status === 0) message = 'No se puede conectar al servidor. ¿Está corriendo el backend?';
     else if (error.status === 404) message = 'Recurso no encontrado';
     else if (error.status === 400) message = error.error?.message ?? 'Datos inválidos';
     else if (error.status >= 500) message = 'Error interno del servidor';

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   IonHeader, IonToolbar, IonTitle, IonContent,
@@ -9,8 +9,7 @@ import {
 import { addIcons } from 'ionicons';
 import { refreshOutline, trophyOutline,
          businessOutline, serverOutline } from 'ionicons/icons';
-import { FranchiseApiService, FranchiseApi,
-         TopProductApi } from '../../services/franchise-api.service';
+import { FranchiseApiService, FranchiseApi } from '../../services/franchise-api.service';
 import { FeatureFlagService } from '../../services/feature-flag.service';
 import { TaskService } from '../../services/task.service';
 
@@ -28,8 +27,7 @@ import { TaskService } from '../../services/task.service';
     <ion-header>
       <ion-toolbar color="primary">
         <ion-title>📊 Estadísticas</ion-title>
-        <ion-button slot="end" fill="clear" color="light"
-          (click)="loadData()">
+        <ion-button slot="end" fill="clear" color="light" (click)="loadData()">
           <ion-icon name="refresh-outline" slot="icon-only"></ion-icon>
         </ion-button>
       </ion-toolbar>
@@ -60,7 +58,7 @@ import { TaskService } from '../../services/task.service';
         </ion-card-content>
       </ion-card>
 
-      <!-- Feature Flags activos -->
+      <!-- Feature Flags -->
       <ion-card>
         <ion-card-header>
           <ion-card-title>🚩 Feature Flags (Remote Config)</ion-card-title>
@@ -116,7 +114,7 @@ import { TaskService } from '../../services/task.service';
           </div>
 
           <div *ngIf="backendError()" class="error-container">
-            <p color="danger">⚠️ {{ backendError() }}</p>
+            <p>⚠️ {{ backendError() }}</p>
             <ion-button expand="block" fill="outline" (click)="loadData()">
               Reintentar
             </ion-button>
@@ -128,8 +126,7 @@ import { TaskService } from '../../services/task.service';
             </p>
             <ion-list>
               <ion-item *ngFor="let f of franchises()">
-                <ion-icon name="business-outline" slot="start" color="primary">
-                </ion-icon>
+                <ion-icon name="business-outline" slot="start" color="primary"></ion-icon>
                 <ion-label>
                   <h2>{{ f.name }}</h2>
                   <p>{{ f.branches.length }} sucursales</p>
@@ -140,6 +137,7 @@ import { TaskService } from '../../services/task.service';
               </ion-item>
             </ion-list>
           </div>
+
         </ion-card-content>
       </ion-card>
 
@@ -167,21 +165,22 @@ import { TaskService } from '../../services/task.service';
   `]
 })
 export class StatsPage implements OnInit {
+  taskService   = inject(TaskService);
+  flagService   = inject(FeatureFlagService);
+  private apiService  = inject(FranchiseApiService);
+  private toastCtrl   = inject(ToastController);
 
-  loading     = signal(false);
+  loading      = signal(false);
   backendError = signal<string | null>(null);
-  franchises  = signal<FranchiseApi[]>([]);
+  franchises   = signal<FranchiseApi[]>([]);
 
-  constructor(
-    public taskService: TaskService,
-    public flagService: FeatureFlagService,
-    private apiService: FranchiseApiService,
-    private toastCtrl: ToastController
-  ) {
+  constructor() {
     addIcons({ refreshOutline, trophyOutline, businessOutline, serverOutline });
   }
 
-  ngOnInit() { this.loadData(); }
+  ngOnInit() {
+    this.loadData();
+  }
 
   loadData() {
     this.loading.set(true);
@@ -203,7 +202,8 @@ export class StatsPage implements OnInit {
     await this.flagService.fetchRemoteFlags();
     const toast = await this.toastCtrl.create({
       message: 'Feature flags actualizados desde Firebase ✅',
-      duration: 2000, color: 'success'
+      duration: 2000,
+      color: 'success'
     });
     await toast.present();
   }
